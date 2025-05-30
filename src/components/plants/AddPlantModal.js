@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Plus, X } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Plus, X, RefreshCw } from 'lucide-react';
 import CameraCapture from '../camera/CameraCapture';
 import { generatePlantCode } from '../../utils/plantUtils';
 import { formatDateForInput } from '../../utils/dateUtils';
@@ -19,7 +19,19 @@ const AddPlantModal = ({ isOpen, onClose, onAddPlant }) => {
     notes: ''
   });
 
+  const [plantCode, setPlantCode] = useState('');
   const [errors, setErrors] = useState({});
+
+  // Generate plant code when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setPlantCode(generatePlantCode());
+    }
+  }, [isOpen]);
+
+  const regenerateCode = () => {
+    setPlantCode(generatePlantCode());
+  };
 
   const validateForm = () => {
     const newErrors = {};
@@ -42,7 +54,7 @@ const AddPlantModal = ({ isOpen, onClose, onAddPlant }) => {
 
     const newPlant = {
       id: Date.now(),
-      plantCode: generatePlantCode(),
+      plantCode: plantCode, // Use the pre-generated code
       ...formData,
       photo: formData.photo || DEFAULT_PLANT_IMAGE,
       actions: []
@@ -63,6 +75,7 @@ const AddPlantModal = ({ isOpen, onClose, onAddPlant }) => {
       wateringFrequency: '',
       notes: ''
     });
+    setPlantCode('');
     setErrors({});
     onClose();
   };
@@ -101,6 +114,30 @@ const AddPlantModal = ({ isOpen, onClose, onAddPlant }) => {
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          {/* Plant Code Section */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-gray-800">Plant Code</h3>
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-green-600 mb-1">Generated Plant Code</p>
+                  <p className="text-2xl font-mono font-bold text-green-800">{plantCode}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={regenerateCode}
+                  className="flex items-center gap-2 px-3 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  New Code
+                </button>
+              </div>
+              <p className="text-xs text-green-600 mt-2">
+                This unique code will identify your plant. You can generate a new one if needed.
+              </p>
+            </div>
+          </div>
+
           {/* Plant Photo Section */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-gray-800">Plant Photo</h3>
