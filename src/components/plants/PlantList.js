@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Leaf } from 'lucide-react';
-import PlantCard from './PlantCard';
 import SearchFilter from '../common/SearchFilter';
 import { filterPlants } from '../../utils/plantUtils';
 
@@ -8,7 +7,10 @@ const PlantList = ({ plants, onPlantClick }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
 
+  // Filter first, then sort alphabetically by plant name
   const filteredPlants = filterPlants(plants, searchTerm, filterType);
+  const sortedPlants = filteredPlants.sort((a, b) => a.name.localeCompare(b.name));
+
   const plantTypes = [...new Set(plants.map(plant => plant.type))];
 
   return (
@@ -21,13 +23,48 @@ const PlantList = ({ plants, onPlantClick }) => {
         plantTypes={plantTypes}
       />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {filteredPlants.map((plant) => (
-          <PlantCard key={plant.id} plant={plant} onPlantClick={onPlantClick} />
-        ))}
-      </div>
-
-      {filteredPlants.length === 0 && (
+      {sortedPlants.length > 0 ? (
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+          <table className="w-full">
+            <thead className="bg-gray-50 border-b border-gray-200">
+              <tr>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Plant Name
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Type
+                </th>
+                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Plant Code
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {sortedPlants.map((plant, index) => (
+                <tr
+                  key={plant.id}
+                  onClick={() => onPlantClick(plant)}
+                  className={`cursor-pointer hover:bg-green-50 transition-colors ${
+                    index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
+                  }`}
+                >
+                  <td className="px-4 py-3 text-sm font-medium text-gray-900">
+                    {plant.name}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-gray-600">
+                    {plant.type}
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 font-mono">
+                      {plant.plantCode}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
         <div className="text-center py-12">
           <Leaf className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">No plants found</h3>
