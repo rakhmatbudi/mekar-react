@@ -166,6 +166,8 @@ const AddPlantModal = ({ isOpen, onClose, onAddPlant }) => {
   });
 
   const [errors, setErrors] = useState({});
+  const [isCapturing, setIsCapturing] = useState(false);
+  const [stream, setStream] = useState(null);
 
   const plantTypes = [
     'Tropical Houseplant',
@@ -204,6 +206,50 @@ const AddPlantModal = ({ isOpen, onClose, onAddPlant }) => {
     return Object.keys(newErrors).length === 0;
   };
 
+  const startCamera = async () => {
+    try {
+      setIsCapturing(true);
+      const mediaStream = await navigator.mediaDevices.getUserMedia({ 
+        video: { 
+          facingMode: 'environment', // Use back camera on mobile
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        } 
+      });
+      setStream(mediaStream);
+    } catch (error) {
+      console.error('Error accessing camera:', error);
+      alert('Unable to access camera. Please check permissions or use a different device.');
+      setIsCapturing(false);
+    }
+  };
+
+  const stopCamera = () => {
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+      setStream(null);
+    }
+    setIsCapturing(false);
+  };
+
+  const capturePhoto = () => {
+    const video = document.getElementById('camera-video');
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    
+    const context = canvas.getContext('2d');
+    context.drawImage(video, 0, 0);
+    
+    const photoDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+    setFormData(prev => ({ ...prev, photo: photoDataUrl }));
+    stopCamera();
+  };
+
+  const removePhoto = () => {
+    setFormData(prev => ({ ...prev, photo: '' }));
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     
@@ -233,6 +279,7 @@ const AddPlantModal = ({ isOpen, onClose, onAddPlant }) => {
       notes: ''
     });
     setErrors({});
+    stopCamera();
     onClose();
   };
 
@@ -251,6 +298,11 @@ const AddPlantModal = ({ isOpen, onClose, onAddPlant }) => {
     }
   };
 
+  const handleClose = () => {
+    stopCamera();
+    onClose();
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -262,7 +314,7 @@ const AddPlantModal = ({ isOpen, onClose, onAddPlant }) => {
             Add New Plant
           </h2>
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
           >
             <X className="w-5 h-5 text-gray-500" />
@@ -270,6 +322,91 @@ const AddPlantModal = ({ isOpen, onClose, onAddPlant }) => {
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          {/* Plant Photo Section */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-gray-800">Plant Photo</h3>
+            
+            {!formData.photo && !isCapturing && (
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+                <Camera className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-600 mb-4">Take a photo of your plant</p>
+                <button
+                  type="button"
+                  onClick={startCamera}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors"
+                >
+                  <Camera className="w-4 h-4" />
+                  Open Camera
+                </button>
+              </div>
+            )}
+
+            {isCapturing && (
+              <div className="space-y-4">
+                <div className="relative bg-black rounded-lg overflow-hidden">
+                  <video
+                    id="camera-video"
+                    ref={(video) => {
+                      if (video && stream) {
+                        video.srcObject = stream;
+                        video.play();
+                      }
+                    }}
+                    className="w-full h-64 object-cover"
+                    autoPlay
+                    playsInline
+                  />
+                </div>
+                <div className="flex justify-center gap-3">
+                  <button
+                    type="button"
+                    onClick={capturePhoto}
+                    className="inline-flex items-center gap-2 px-6 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors"
+                  >
+                    <Camera className="w-4 h-4" />
+                    Capture Photo
+                  </button>
+                  <button
+                    type="button"
+                    onClick={stopCamera}
+                    className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {formData.photo && !isCapturing && (
+              <div className="space-y-4">
+                <div className="relative">
+                  <img
+                    src={formData.photo}
+                    alt="Plant preview"
+                    className="w-full h-64 object-cover rounded-lg"
+                  />
+                </div>
+                <div className="flex justify-center gap-3">
+                  <button
+                    type="button"
+                    onClick={startCamera}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors"
+                  >
+                    <Camera className="w-4 h-4" />
+                    Retake Photo
+                  </button>
+                  <button
+                    type="button"
+                    onClick={removePhoto}
+                    className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors"
+                  >
+                    Remove Photo
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Basic Information */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-gray-800">Basic Information</h3>
@@ -309,20 +446,6 @@ const AddPlantModal = ({ isOpen, onClose, onAddPlant }) => {
                 </select>
                 {errors.type && <p className="text-red-500 text-sm mt-1">{errors.type}</p>}
               </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Photo URL (optional)
-              </label>
-              <input
-                type="url"
-                value={formData.photo}
-                onChange={(e) => handleChange('photo', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                placeholder="https://example.com/plant-photo.jpg"
-              />
-              <p className="text-sm text-gray-500 mt-1">Leave empty for default plant image</p>
             </div>
           </div>
 
@@ -450,7 +573,7 @@ const AddPlantModal = ({ isOpen, onClose, onAddPlant }) => {
           <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleClose}
               className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
             >
               Cancel
