@@ -1,6 +1,7 @@
 import React from 'react';
 import { Droplets, Scissors, Sun, AlertCircle } from 'lucide-react';
-import { formatDate, getPriorityColorClass } from '../../utils/plantUtils';
+import { formatDate } from '../../utils/dateUtils';
+import { getPriorityColorClass } from '../../utils/plantUtils';
 
 const ActionItem = ({ action }) => {
   const getActionIcon = (task) => {

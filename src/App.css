@@ -1,38 +1,66 @@
-.App {
-  text-align: center;
-}
+import React, { useState } from 'react';
+import Header from './components/common/Header';
+import LoadingSpinner from './components/common/LoadingSpinner';
+import PlantList from './components/plants/PlantList';
+import PlantDetail from './components/plants/PlantDetail';
+import AddPlantModal from './components/plants/AddPlantModal';
+import { usePlants } from './hooks/usePlants';
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
+const App = () => {
+  const { plants, loading, addPlant } = usePlants();
+  const [selectedPlant, setSelectedPlant] = useState(null);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
+  const handlePlantClick = (plant) => {
+    setSelectedPlant(plant);
+  };
+
+  const handleBackToList = () => {
+    setSelectedPlant(null);
+  };
+
+  const handleAddPlant = (newPlant) => {
+    addPlant(newPlant);
+    setIsAddModalOpen(false);
+  };
+
+  const openAddModal = () => {
+    setIsAddModalOpen(true);
+  };
+
+  const closeAddModal = () => {
+    setIsAddModalOpen(false);
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50">
+        <Header plantCount={0} onAddPlant={openAddModal} />
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <LoadingSpinner />
+        </main>
+      </div>
+    );
   }
-}
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
-}
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50">
+      <Header plantCount={plants.length} onAddPlant={openAddModal} />
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {selectedPlant ? (
+          <PlantDetail plant={selectedPlant} onBack={handleBackToList} />
+        ) : (
+          <PlantList plants={plants} onPlantClick={handlePlantClick} />
+        )}
+      </main>
+      
+      <AddPlantModal 
+        isOpen={isAddModalOpen}
+        onClose={closeAddModal}
+        onAddPlant={handleAddPlant}
+      />
+    </div>
+  );
+};
 
-.App-link {
-  color: #61dafb;
-}
-
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
+export default App;
