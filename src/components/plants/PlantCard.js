@@ -3,17 +3,16 @@ import React from 'react';
 const PlantCard = ({ plant, onPlantClick }) => {
   return (
     <div 
-      className="plant-card cursor-pointer hover:scale-105 transition-transform duration-200"
+      className="bg-white border border-gray-200 rounded-lg p-3 cursor-pointer hover:shadow-md hover:border-green-300 transition-all duration-200"
       onClick={() => onPlantClick(plant)}
     >
-      <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-6 text-white">
-        <div className="flex justify-between items-start mb-3">
-          <h3 className="text-xl font-bold">{plant.name}</h3>
-          <div className="flex items-center gap-1 bg-white bg-opacity-20 px-3 py-1 rounded-full text-sm font-mono">
-            {plant.plantCode}
-          </div>
-        </div>
-        <p className="text-green-100 text-base">{plant.type}</p>
+      <div className="flex justify-between items-center">
+        <h3 className="text-sm font-semibold text-gray-900 truncate flex-1 mr-2">
+          {plant.name}
+        </h3>
+        <span className="text-xs font-mono bg-green-100 text-green-800 px-2 py-1 rounded flex-shrink-0">
+          {plant.plantCode}
+        </span>
       </div>
     </div>
   );
