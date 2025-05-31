@@ -4,7 +4,7 @@ import { Plus, X, RefreshCw } from 'lucide-react';
 import CameraCapture from '../camera/CameraCapture';
 import { generatePlantCode } from '../../utils/plantUtils';
 import { formatDateForInput } from '../../utils/dateUtils';
-import { DEFAULT_PLANT_IMAGE } from '../../utils/constants'; // Removed LIGHT_OPTIONS
+import { DEFAULT_PLANT_IMAGE } from '../../utils/constants';
 import { useCategories } from '../../hooks/useCategories';
 
 const AddPlantModal = ({ isOpen, onClose, onAddPlant }) => {
@@ -14,12 +14,10 @@ const AddPlantModal = ({ isOpen, onClose, onAddPlant }) => {
     name: '',
     type: '',
     photo: '',
-    location: '',
-    potSize: '',
+    location: '', // Now optional
+    potSize: '', // Now optional
     lastMediaChange: formatDateForInput(new Date()),
-    // Removed nextWatering: formatDateForInput(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)),
-    // Removed lightRequirement: '',
-    wateringFrequency: '',
+    wateringFrequency: '', // Now optional
     notes: ''
   });
 
@@ -41,10 +39,9 @@ const AddPlantModal = ({ isOpen, onClose, onAddPlant }) => {
 
     if (!formData.name.trim()) newErrors.name = 'Plant name is required';
     if (!formData.type.trim()) newErrors.type = 'Plant category is required';
-    if (!formData.location.trim()) newErrors.location = 'Location is required';
-    if (!formData.potSize.trim()) newErrors.potSize = 'Pot size is required';
-    // Removed if (!formData.lightRequirement.trim()) newErrors.lightRequirement = 'Light requirement is required';
-    if (!formData.wateringFrequency.trim()) newErrors.wateringFrequency = 'Watering frequency is required';
+    // Removed validation for location
+    // Removed validation for potSize
+    // Removed validation for wateringFrequency
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -56,16 +53,17 @@ const AddPlantModal = ({ isOpen, onClose, onAddPlant }) => {
     if (!validateForm()) return;
 
     const newPlant = {
-      id: Date.now(), // This ID is client-side, typically server would assign this
+      // In a real app, 'id' would be assigned by the database/API after successful creation
+      id: Date.now(),
       plantCode: plantCode,
       ...formData,
       photo: formData.photo || DEFAULT_PLANT_IMAGE,
-      actions: []
+      actions: [] // Assuming actions are managed separately or initialized empty
     };
 
     onAddPlant(newPlant);
 
-    // Reset formData after successful submission
+    // Reset formData to initial empty state after submission
     setFormData({
       name: '',
       type: '',
@@ -73,8 +71,6 @@ const AddPlantModal = ({ isOpen, onClose, onAddPlant }) => {
       location: '',
       potSize: '',
       lastMediaChange: formatDateForInput(new Date()),
-      // Removed nextWatering: formatDateForInput(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)),
-      // Removed lightRequirement: '',
       wateringFrequency: '',
       notes: ''
     });
@@ -89,6 +85,7 @@ const AddPlantModal = ({ isOpen, onClose, onAddPlant }) => {
       [field]: value
     }));
 
+    // Clear error for the field if it was previously set
     if (errors[field]) {
       setErrors(prev => ({
         ...prev,
@@ -198,7 +195,7 @@ const AddPlantModal = ({ isOpen, onClose, onAddPlant }) => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Location *
+                  Location
                 </label>
                 <input
                   type="text"
@@ -209,12 +206,12 @@ const AddPlantModal = ({ isOpen, onClose, onAddPlant }) => {
                   }`}
                   placeholder="e.g., Living Room - East Window"
                 />
-                {errors.location && <p className="text-red-500 text-sm mt-1">{errors.location}</p>}
+                {/* No error message for location now */}
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Pot Size *
+                  Pot Size
                 </label>
                 <input
                   type="text"
@@ -225,7 +222,7 @@ const AddPlantModal = ({ isOpen, onClose, onAddPlant }) => {
                   }`}
                   placeholder="e.g., 12 inch ceramic pot"
                 />
-                {errors.potSize && <p className="text-red-500 text-sm mt-1">{errors.potSize}</p>}
+                {/* No error message for potSize now */}
               </div>
             </div>
           </div>
@@ -234,11 +231,9 @@ const AddPlantModal = ({ isOpen, onClose, onAddPlant }) => {
             <h3 className="text-lg font-semibold text-gray-800">Care Information</h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Removed Light Requirement Input */}
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Watering Frequency *
+                  Watering Frequency
                 </label>
                 <input
                   type="text"
@@ -249,7 +244,11 @@ const AddPlantModal = ({ isOpen, onClose, onAddPlant }) => {
                   }`}
                   placeholder="e.g., Weekly, Every 3-4 days"
                 />
-                {errors.wateringFrequency && <p className="text-red-500 text-sm mt-1">{errors.wateringFrequency}</p>}
+                {/* No error message for wateringFrequency now */}
+              </div>
+              {/* This div is now empty or might need re-structuring if you only have one input left in this row */}
+              <div>
+                {/* This div is here to maintain grid layout, remove if you redesign the layout */}
               </div>
             </div>
 
@@ -266,10 +265,9 @@ const AddPlantModal = ({ isOpen, onClose, onAddPlant }) => {
                 />
               </div>
 
-              {/* Removed Next Watering Input */}
-              {/* This div is now empty or might need re-structuring if you only have one input left in this row */}
+              {/* This div is here to maintain grid layout, remove if you redesign the layout */}
               <div>
-                {/* Keep this div if you plan to add another input here later, or remove if not needed */}
+                {/* No next watering input here */}
               </div>
             </div>
 
