@@ -14,10 +14,10 @@ const AddPlantModal = ({ isOpen, onClose, onAddPlant }) => {
     name: '',
     type: '',
     photo: '',
-    location: '', // Now optional
-    potSize: '', // Now optional
+    location: '',
+    potDescription: '', // Changed from potSize to potDescription
     lastMediaChange: formatDateForInput(new Date()),
-    wateringFrequency: '', // Now optional
+    wateringFrequency: '',
     notes: ''
   });
 
@@ -39,9 +39,6 @@ const AddPlantModal = ({ isOpen, onClose, onAddPlant }) => {
 
     if (!formData.name.trim()) newErrors.name = 'Plant name is required';
     if (!formData.type.trim()) newErrors.type = 'Plant category is required';
-    // Removed validation for location
-    // Removed validation for potSize
-    // Removed validation for wateringFrequency
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -53,23 +50,21 @@ const AddPlantModal = ({ isOpen, onClose, onAddPlant }) => {
     if (!validateForm()) return;
 
     const newPlant = {
-      // In a real app, 'id' would be assigned by the database/API after successful creation
       id: Date.now(),
       plantCode: plantCode,
       ...formData,
       photo: formData.photo || DEFAULT_PLANT_IMAGE,
-      actions: [] // Assuming actions are managed separately or initialized empty
+      actions: []
     };
 
     onAddPlant(newPlant);
 
-    // Reset formData to initial empty state after submission
     setFormData({
       name: '',
       type: '',
       photo: '',
       location: '',
-      potSize: '',
+      potDescription: '', // Changed from potSize to potDescription
       lastMediaChange: formatDateForInput(new Date()),
       wateringFrequency: '',
       notes: ''
@@ -85,7 +80,6 @@ const AddPlantModal = ({ isOpen, onClose, onAddPlant }) => {
       [field]: value
     }));
 
-    // Clear error for the field if it was previously set
     if (errors[field]) {
       setErrors(prev => ({
         ...prev,
@@ -206,23 +200,22 @@ const AddPlantModal = ({ isOpen, onClose, onAddPlant }) => {
                   }`}
                   placeholder="e.g., Living Room - East Window"
                 />
-                {/* No error message for location now */}
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Pot Size
+                  Pot Description
                 </label>
                 <input
                   type="text"
-                  value={formData.potSize}
-                  onChange={(e) => handleChange('potSize', e.target.value)}
+                  value={formData.potDescription} // Changed from potSize to potDescription
+                  onChange={(e) => handleChange('potDescription', e.target.value)} // Changed from potSize to potDescription
                   className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent ${
-                    errors.potSize ? 'border-red-500' : 'border-gray-300'
+                    errors.potDescription ? 'border-red-500' : 'border-gray-300' // Changed from potSize to potDescription
                   }`}
-                  placeholder="e.g., 12 inch ceramic pot"
+                  placeholder="e.g., 12 inch ceramic pot, self-watering planter"
                 />
-                {/* No error message for potSize now */}
+                {/* No error message for potDescription now */}
               </div>
             </div>
           </div>
@@ -244,11 +237,9 @@ const AddPlantModal = ({ isOpen, onClose, onAddPlant }) => {
                   }`}
                   placeholder="e.g., Weekly, Every 3-4 days"
                 />
-                {/* No error message for wateringFrequency now */}
               </div>
-              {/* This div is now empty or might need re-structuring if you only have one input left in this row */}
               <div>
-                {/* This div is here to maintain grid layout, remove if you redesign the layout */}
+                {/* Empty div to maintain grid layout consistency, or can be removed if layout changes */}
               </div>
             </div>
 
@@ -264,10 +255,8 @@ const AddPlantModal = ({ isOpen, onClose, onAddPlant }) => {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 />
               </div>
-
-              {/* This div is here to maintain grid layout, remove if you redesign the layout */}
               <div>
-                {/* No next watering input here */}
+                {/* Empty div to maintain grid layout consistency, or can be removed if layout changes */}
               </div>
             </div>
 
