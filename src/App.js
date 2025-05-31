@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, AlertCircle, RefreshCw } from 'lucide-react';
 import Header from './components/common/Header';
 import LoadingSpinner from './components/common/LoadingSpinner';
 import PlantList from './components/plants/PlantList';
@@ -8,7 +8,7 @@ import AddPlantModal from './components/plants/AddPlantModal';
 import { usePlants } from './hooks/usePlants';
 
 const App = () => {
-  const { plants, loading, addPlant } = usePlants();
+  const { plants, loading, error, addPlant, refetch } = usePlants();
   const [selectedPlant, setSelectedPlant] = useState(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
@@ -39,6 +39,30 @@ const App = () => {
         <Header plantCount={0} />
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <LoadingSpinner />
+        </main>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50">
+        <Header plantCount={0} />
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="bg-white rounded-lg shadow-sm border border-red-200 p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <AlertCircle className="w-6 h-6 text-red-500" />
+              <h2 className="text-lg font-semibold text-red-800">Error Loading Plants</h2>
+            </div>
+            <p className="text-red-600 mb-4">{error}</p>
+            <button
+              onClick={refetch}
+              className="flex items-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors"
+            >
+              <RefreshCw className="w-4 h-4" />
+              Retry
+            </button>
+          </div>
         </main>
       </div>
     );

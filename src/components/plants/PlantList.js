@@ -3,15 +3,27 @@ import { Leaf } from 'lucide-react';
 import SearchFilter from '../common/SearchFilter';
 import { filterPlants } from '../../utils/plantUtils';
 
-const PlantList = ({ plants, onPlantClick }) => {
+const PlantList = ({ plants, onPlantClick, loading }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
 
+  // Use plants data directly from API response (no transformation needed)
   // Filter first, then sort alphabetically by plant name
   const filteredPlants = filterPlants(plants, searchTerm, filterType);
   const sortedPlants = filteredPlants.sort((a, b) => a.name.localeCompare(b.name));
 
-  const plantTypes = [...new Set(plants.map(plant => plant.type))];
+  // Get unique plant types (category names) for filter dropdown
+  const plantTypes = [...new Set(plants.map(plant => plant.category_name || plant.type).filter(Boolean))];
+
+  if (loading) {
+    return (
+      <div className="text-center py-12">
+        <Leaf className="w-16 h-16 text-gray-400 mx-auto mb-4 animate-pulse" />
+        <h3 className="text-lg font-medium text-gray-900 mb-2">Loading plants...</h3>
+        <p className="text-gray-600">Please wait while we fetch the data.</p>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -32,7 +44,7 @@ const PlantList = ({ plants, onPlantClick }) => {
                   Plant Name
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Type
+                  Category
                 </th>
                 <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Plant Code
@@ -52,11 +64,13 @@ const PlantList = ({ plants, onPlantClick }) => {
                     {plant.name}
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-600">
-                    {plant.type}
+                    <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-blue-100 text-blue-800">
+                      {plant.category_name || plant.type}
+                    </span>
                   </td>
                   <td className="px-4 py-3 text-center">
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 font-mono">
-                      {plant.plantCode}
+                      {plant.code || plant.plantCode}
                     </span>
                   </td>
                 </tr>
@@ -68,7 +82,12 @@ const PlantList = ({ plants, onPlantClick }) => {
         <div className="text-center py-12">
           <Leaf className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">No plants found</h3>
-          <p className="text-gray-600">Try adjusting your search or filter criteria.</p>
+          <p className="text-gray-600">
+            {searchTerm || filterType !== 'all' 
+              ? 'Try adjusting your search or filter criteria.'
+              : 'No plants available at the moment.'
+            }
+          </p>
         </div>
       )}
     </>

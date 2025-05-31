@@ -1,11 +1,15 @@
+// components/plants/AddPlantModal.js 
 import React, { useState, useEffect } from 'react';
 import { Plus, X, RefreshCw } from 'lucide-react';
 import CameraCapture from '../camera/CameraCapture';
 import { generatePlantCode } from '../../utils/plantUtils';
 import { formatDateForInput } from '../../utils/dateUtils';
-import { PLANT_TYPES, LIGHT_OPTIONS, DEFAULT_PLANT_IMAGE } from '../../utils/constants';
+import { LIGHT_OPTIONS, DEFAULT_PLANT_IMAGE } from '../../utils/constants';
+import { useCategories } from '../../hooks/useCategories';
 
 const AddPlantModal = ({ isOpen, onClose, onAddPlant }) => {
+  const { categories, loading: categoriesLoading } = useCategories();
+  
   const [formData, setFormData] = useState({
     name: '',
     type: '',
@@ -13,7 +17,7 @@ const AddPlantModal = ({ isOpen, onClose, onAddPlant }) => {
     location: '',
     potSize: '',
     lastMediaChange: formatDateForInput(new Date()),
-    nextWatering: formatDateForInput(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)), // 7 days from now
+    nextWatering: formatDateForInput(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)),
     lightRequirement: '',
     wateringFrequency: '',
     notes: ''
@@ -22,7 +26,6 @@ const AddPlantModal = ({ isOpen, onClose, onAddPlant }) => {
   const [plantCode, setPlantCode] = useState('');
   const [errors, setErrors] = useState({});
 
-  // Generate plant code when modal opens
   useEffect(() => {
     if (isOpen) {
       setPlantCode(generatePlantCode());
@@ -37,7 +40,7 @@ const AddPlantModal = ({ isOpen, onClose, onAddPlant }) => {
     const newErrors = {};
     
     if (!formData.name.trim()) newErrors.name = 'Plant name is required';
-    if (!formData.type.trim()) newErrors.type = 'Plant type is required';
+    if (!formData.type.trim()) newErrors.type = 'Plant category is required';
     if (!formData.location.trim()) newErrors.location = 'Location is required';
     if (!formData.potSize.trim()) newErrors.potSize = 'Pot size is required';
     if (!formData.lightRequirement.trim()) newErrors.lightRequirement = 'Light requirement is required';
@@ -54,7 +57,7 @@ const AddPlantModal = ({ isOpen, onClose, onAddPlant }) => {
 
     const newPlant = {
       id: Date.now(),
-      plantCode: plantCode, // Use the pre-generated code
+      plantCode: plantCode,
       ...formData,
       photo: formData.photo || DEFAULT_PLANT_IMAGE,
       actions: []
@@ -62,7 +65,6 @@ const AddPlantModal = ({ isOpen, onClose, onAddPlant }) => {
 
     onAddPlant(newPlant);
     
-    // Reset form
     setFormData({
       name: '',
       type: '',
@@ -86,7 +88,6 @@ const AddPlantModal = ({ isOpen, onClose, onAddPlant }) => {
       [field]: value
     }));
     
-    // Clear error when user starts typing
     if (errors[field]) {
       setErrors(prev => ({
         ...prev,
@@ -114,7 +115,6 @@ const AddPlantModal = ({ isOpen, onClose, onAddPlant }) => {
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {/* Plant Code Section */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-gray-800">Plant Code</h3>
             <div className="bg-green-50 border border-green-200 rounded-lg p-4">
@@ -138,7 +138,6 @@ const AddPlantModal = ({ isOpen, onClose, onAddPlant }) => {
             </div>
           </div>
 
-          {/* Plant Photo Section */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-gray-800">Plant Photo</h3>
             <CameraCapture
@@ -148,7 +147,6 @@ const AddPlantModal = ({ isOpen, onClose, onAddPlant }) => {
             />
           </div>
 
-          {/* Basic Information */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-gray-800">Basic Information</h3>
             
@@ -171,18 +169,21 @@ const AddPlantModal = ({ isOpen, onClose, onAddPlant }) => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Plant Type *
+                  Plant Category *
                 </label>
                 <select
                   value={formData.type}
                   onChange={(e) => handleChange('type', e.target.value)}
+                  disabled={categoriesLoading}
                   className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent ${
                     errors.type ? 'border-red-500' : 'border-gray-300'
-                  }`}
+                  } ${categoriesLoading ? 'bg-gray-100' : ''}`}
                 >
-                  <option value="">Select plant type</option>
-                  {PLANT_TYPES.map(type => (
-                    <option key={type} value={type}>{type}</option>
+                  <option value="">
+                    {categoriesLoading ? 'Loading categories...' : 'Select plant category'}
+                  </option>
+                  {categories.map(category => (
+                    <option key={category.id} value={category.name}>{category.name}</option>
                   ))}
                 </select>
                 {errors.type && <p className="text-red-500 text-sm mt-1">{errors.type}</p>}
@@ -190,7 +191,6 @@ const AddPlantModal = ({ isOpen, onClose, onAddPlant }) => {
             </div>
           </div>
 
-          {/* Location and Pot */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-gray-800">Location & Container</h3>
             
@@ -229,7 +229,6 @@ const AddPlantModal = ({ isOpen, onClose, onAddPlant }) => {
             </div>
           </div>
 
-          {/* Care Information */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-gray-800">Care Information</h3>
             
@@ -310,7 +309,6 @@ const AddPlantModal = ({ isOpen, onClose, onAddPlant }) => {
             </div>
           </div>
 
-          {/* Form Actions */}
           <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
             <button
               type="button"
@@ -321,7 +319,8 @@ const AddPlantModal = ({ isOpen, onClose, onAddPlant }) => {
             </button>
             <button
               type="submit"
-              className="px-6 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors flex items-center gap-2"
+              disabled={categoriesLoading}
+              className="px-6 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Plus className="w-4 h-4" />
               Add Plant
