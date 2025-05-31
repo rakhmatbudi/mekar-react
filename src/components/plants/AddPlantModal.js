@@ -10,14 +10,15 @@ import { useCategories } from '../../hooks/useCategories';
 const AddPlantModal = ({ isOpen, onClose, onAddPlant }) => {
   const { categories, loading: categoriesLoading } = useCategories();
 
+  // Adjusted formData to match API's snake_case for consistency
   const [formData, setFormData] = useState({
     name: '',
-    type: '',
-    photo: '',
+    category_id: '', // Storing category_id directly for API payload
+    photo_path: '', // Changed to photo_path to match API
     location: '',
-    potDescription: '', // Changed from potSize to potDescription
-    lastMediaChange: formatDateForInput(new Date()),
-    wateringFrequency: '',
+    pot_description: '', // Changed from potDescription to pot_description
+    last_media_changed: formatDateForInput(new Date()), // Changed from lastMediaChange
+    watering_frequency: '', // Changed from wateringFrequency
     notes: ''
   });
 
@@ -27,6 +28,18 @@ const AddPlantModal = ({ isOpen, onClose, onAddPlant }) => {
   useEffect(() => {
     if (isOpen) {
       setPlantCode(generatePlantCode());
+      // Reset form data when opening the modal, to ensure fresh start
+      setFormData({
+        name: '',
+        category_id: '',
+        photo_path: '',
+        location: '',
+        pot_description: '',
+        last_media_changed: formatDateForInput(new Date()),
+        watering_frequency: '',
+        notes: ''
+      });
+      setErrors({}); // Clear errors on modal open
     }
   }, [isOpen]);
 
@@ -38,7 +51,8 @@ const AddPlantModal = ({ isOpen, onClose, onAddPlant }) => {
     const newErrors = {};
 
     if (!formData.name.trim()) newErrors.name = 'Plant name is required';
-    if (!formData.type.trim()) newErrors.type = 'Plant category is required';
+    // Validate category_id instead of type
+    if (!formData.category_id) newErrors.category_id = 'Plant category is required';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -49,24 +63,30 @@ const AddPlantModal = ({ isOpen, onClose, onAddPlant }) => {
 
     if (!validateForm()) return;
 
-    const newPlant = {
-      id: Date.now(),
-      plantCode: plantCode,
+    // The API might expect 'code' to be sent, or it might generate it.
+    // Assuming you send it as 'code' if it's part of the creation payload.
+    // If the API generates `code` and `id`, remove `plantCode` from the payload.
+    const plantDataToSend = {
       ...formData,
-      photo: formData.photo || DEFAULT_PLANT_IMAGE,
-      actions: []
+      code: plantCode, // Send the generated code
+      photo_path: formData.photo_path || DEFAULT_PLANT_IMAGE, // Ensure photo_path is set or default
+      // No need for 'id' here, as the API will assign it
     };
 
-    onAddPlant(newPlant);
+    // Assuming onAddPlant is responsible for making the API call
+    // It should receive plantDataToSend
+    onAddPlant(plantDataToSend);
 
+    // Form reset handled by useEffect on subsequent opens, but good to have here too
+    // in case modal stays open or you want to clear immediately after successful add
     setFormData({
       name: '',
-      type: '',
-      photo: '',
+      category_id: '',
+      photo_path: '',
       location: '',
-      potDescription: '', // Changed from potSize to potDescription
-      lastMediaChange: formatDateForInput(new Date()),
-      wateringFrequency: '',
+      pot_description: '',
+      last_media_changed: formatDateForInput(new Date()),
+      watering_frequency: '',
       notes: ''
     });
     setPlantCode('');
@@ -86,6 +106,12 @@ const AddPlantModal = ({ isOpen, onClose, onAddPlant }) => {
         [field]: ''
       }));
     }
+  };
+
+  // Special handleChange for category dropdown
+  const handleCategoryChange = (e) => {
+    const selectedCategoryId = e.target.value;
+    handleChange('category_id', selectedCategoryId);
   };
 
   if (!isOpen) return null;
@@ -133,9 +159,10 @@ const AddPlantModal = ({ isOpen, onClose, onAddPlant }) => {
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-gray-800">Plant Photo</h3>
             <CameraCapture
-              onPhotoCapture={(photo) => handleChange('photo', photo)}
-              capturedPhoto={formData.photo}
-              onRemovePhoto={() => handleChange('photo', '')}
+              // Updated to photo_path
+              onPhotoCapture={(photo) => handleChange('photo_path', photo)}
+              capturedPhoto={formData.photo_path}
+              onRemovePhoto={() => handleChange('photo_path', '')}
             />
           </div>
 
@@ -164,21 +191,23 @@ const AddPlantModal = ({ isOpen, onClose, onAddPlant }) => {
                   Plant Category *
                 </label>
                 <select
-                  value={formData.type}
-                  onChange={(e) => handleChange('type', e.target.value)}
+                  // Value now maps to category_id
+                  value={formData.category_id}
+                  onChange={handleCategoryChange} // Use special handler for category
                   disabled={categoriesLoading}
                   className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent ${
-                    errors.type ? 'border-red-500' : 'border-gray-300'
+                    errors.category_id ? 'border-red-500' : 'border-gray-300' // Changed error check
                   } ${categoriesLoading ? 'bg-gray-100' : ''}`}
                 >
                   <option value="">
                     {categoriesLoading ? 'Loading categories...' : 'Select plant category'}
                   </option>
                   {categories.map(category => (
-                    <option key={category.id} value={category.name}>{category.name}</option>
+                    // Send category.id as value for the API
+                    <option key={category.id} value={category.id}>{category.name}</option>
                   ))}
                 </select>
-                {errors.type && <p className="text-red-500 text-sm mt-1">{errors.type}</p>}
+                {errors.category_id && <p className="text-red-500 text-sm mt-1">{errors.category_id}</p>}
               </div>
             </div>
           </div>
@@ -208,14 +237,14 @@ const AddPlantModal = ({ isOpen, onClose, onAddPlant }) => {
                 </label>
                 <input
                   type="text"
-                  value={formData.potDescription} // Changed from potSize to potDescription
-                  onChange={(e) => handleChange('potDescription', e.target.value)} // Changed from potSize to potDescription
+                  // Updated to pot_description
+                  value={formData.pot_description}
+                  onChange={(e) => handleChange('pot_description', e.target.value)}
                   className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent ${
-                    errors.potDescription ? 'border-red-500' : 'border-gray-300' // Changed from potSize to potDescription
+                    errors.pot_description ? 'border-red-500' : 'border-gray-300'
                   }`}
                   placeholder="e.g., 12 inch ceramic pot, self-watering planter"
                 />
-                {/* No error message for potDescription now */}
               </div>
             </div>
           </div>
@@ -230,16 +259,17 @@ const AddPlantModal = ({ isOpen, onClose, onAddPlant }) => {
                 </label>
                 <input
                   type="text"
-                  value={formData.wateringFrequency}
-                  onChange={(e) => handleChange('wateringFrequency', e.target.value)}
+                  // Updated to watering_frequency
+                  value={formData.watering_frequency}
+                  onChange={(e) => handleChange('watering_frequency', e.target.value)}
                   className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent ${
-                    errors.wateringFrequency ? 'border-red-500' : 'border-gray-300'
+                    errors.watering_frequency ? 'border-red-500' : 'border-gray-300'
                   }`}
                   placeholder="e.g., Weekly, Every 3-4 days"
                 />
               </div>
               <div>
-                {/* Empty div to maintain grid layout consistency, or can be removed if layout changes */}
+                {/* This div is here to maintain grid layout consistency, or can be removed if layout changes */}
               </div>
             </div>
 
@@ -250,13 +280,14 @@ const AddPlantModal = ({ isOpen, onClose, onAddPlant }) => {
                 </label>
                 <input
                   type="date"
-                  value={formData.lastMediaChange}
-                  onChange={(e) => handleChange('lastMediaChange', e.target.value)}
+                  // Updated to last_media_changed
+                  value={formData.last_media_changed}
+                  onChange={(e) => handleChange('last_media_changed', e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 />
               </div>
               <div>
-                {/* Empty div to maintain grid layout consistency, or can be removed if layout changes */}
+                {/* This div is here to maintain grid layout consistency, or can be removed if layout changes */}
               </div>
             </div>
 

@@ -33,26 +33,31 @@ export const usePlants = () => {
       const data = await response.json();
       console.log('🌱 Plants data received:', data); // Debug log
       
-      // Use API data directly with minimal transformation
+      // Use the complete API response structure directly
       const transformedPlants = data.map(plant => ({
+        // Primary API fields
         id: plant.id,
         name: plant.name,
+        category_id: plant.category_id,
         category_name: plant.category_name,
         code: plant.code,
-        category_id: plant.category_id,
         last_media_changed: plant.last_media_changed,
+        location: plant.location,
+        pot_description: plant.pot_description,
+        watering_frequency: plant.watering_frequency,
+        notes: plant.notes,
+        photo_path: plant.photo_path,
+        
         // Legacy fields for backward compatibility
         plantCode: plant.code,
         type: plant.category_name,
         categoryId: plant.category_id,
-        photo: 'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=400&h=300&fit=crop',
-        location: 'Not specified',
-        potSize: 'Not specified',
+        photo: plant.photo_path || 'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=400&h=300&fit=crop',
+        potSize: plant.pot_description || 'Not specified',
         lastMediaChange: plant.last_media_changed || new Date().toISOString().split('T')[0],
         nextWatering: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
         lightRequirement: 'Not specified',
-        wateringFrequency: 'Not specified',
-        notes: '',
+        wateringFrequency: plant.watering_frequency || 'Not specified',
         actions: []
       }));
 
@@ -74,7 +79,8 @@ export const usePlants = () => {
 
   const addPlant = async (newPlant) => {
     try {
-      const categoryId = getCategoryId(newPlant.type);
+      // Use category_id directly if provided, otherwise try to get it from type
+      const categoryId = newPlant.category_id || getCategoryId(newPlant.type);
       if (!categoryId) {
         throw new Error('Invalid category selected');
       }
@@ -87,8 +93,13 @@ export const usePlants = () => {
         body: JSON.stringify({
           name: newPlant.name,
           category_id: categoryId,
-          code: newPlant.plantCode,
-          last_media_changed: newPlant.lastMediaChange
+          code: newPlant.code,
+          last_media_changed: newPlant.last_media_changed,
+          location: newPlant.location || null,
+          pot_description: newPlant.pot_description || null,
+          watering_frequency: newPlant.watering_frequency || null,
+          notes: newPlant.notes || null,
+          photo_path: newPlant.photo_path || null
         }),
       });
 
@@ -100,7 +111,7 @@ export const usePlants = () => {
     } catch (err) {
       console.error('Error adding plant:', err);
       setError(err.message);
-      setPlants(prevPlants => [...prevPlants, newPlant]);
+      throw err; // Re-throw to let the modal handle the error
     }
   };
 
