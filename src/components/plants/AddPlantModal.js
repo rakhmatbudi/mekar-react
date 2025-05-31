@@ -1,15 +1,15 @@
-// components/plants/AddPlantModal.js 
+// components/plants/AddPlantModal.js
 import React, { useState, useEffect } from 'react';
 import { Plus, X, RefreshCw } from 'lucide-react';
 import CameraCapture from '../camera/CameraCapture';
 import { generatePlantCode } from '../../utils/plantUtils';
 import { formatDateForInput } from '../../utils/dateUtils';
-import { LIGHT_OPTIONS, DEFAULT_PLANT_IMAGE } from '../../utils/constants';
+import { DEFAULT_PLANT_IMAGE } from '../../utils/constants'; // Removed LIGHT_OPTIONS
 import { useCategories } from '../../hooks/useCategories';
 
 const AddPlantModal = ({ isOpen, onClose, onAddPlant }) => {
   const { categories, loading: categoriesLoading } = useCategories();
-  
+
   const [formData, setFormData] = useState({
     name: '',
     type: '',
@@ -17,8 +17,8 @@ const AddPlantModal = ({ isOpen, onClose, onAddPlant }) => {
     location: '',
     potSize: '',
     lastMediaChange: formatDateForInput(new Date()),
-    nextWatering: formatDateForInput(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)),
-    lightRequirement: '',
+    // Removed nextWatering: formatDateForInput(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)),
+    // Removed lightRequirement: '',
     wateringFrequency: '',
     notes: ''
   });
@@ -38,25 +38,25 @@ const AddPlantModal = ({ isOpen, onClose, onAddPlant }) => {
 
   const validateForm = () => {
     const newErrors = {};
-    
+
     if (!formData.name.trim()) newErrors.name = 'Plant name is required';
     if (!formData.type.trim()) newErrors.type = 'Plant category is required';
     if (!formData.location.trim()) newErrors.location = 'Location is required';
     if (!formData.potSize.trim()) newErrors.potSize = 'Pot size is required';
-    if (!formData.lightRequirement.trim()) newErrors.lightRequirement = 'Light requirement is required';
+    // Removed if (!formData.lightRequirement.trim()) newErrors.lightRequirement = 'Light requirement is required';
     if (!formData.wateringFrequency.trim()) newErrors.wateringFrequency = 'Watering frequency is required';
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
 
     const newPlant = {
-      id: Date.now(),
+      id: Date.now(), // This ID is client-side, typically server would assign this
       plantCode: plantCode,
       ...formData,
       photo: formData.photo || DEFAULT_PLANT_IMAGE,
@@ -64,7 +64,8 @@ const AddPlantModal = ({ isOpen, onClose, onAddPlant }) => {
     };
 
     onAddPlant(newPlant);
-    
+
+    // Reset formData after successful submission
     setFormData({
       name: '',
       type: '',
@@ -72,8 +73,8 @@ const AddPlantModal = ({ isOpen, onClose, onAddPlant }) => {
       location: '',
       potSize: '',
       lastMediaChange: formatDateForInput(new Date()),
-      nextWatering: formatDateForInput(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)),
-      lightRequirement: '',
+      // Removed nextWatering: formatDateForInput(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)),
+      // Removed lightRequirement: '',
       wateringFrequency: '',
       notes: ''
     });
@@ -87,7 +88,7 @@ const AddPlantModal = ({ isOpen, onClose, onAddPlant }) => {
       ...prev,
       [field]: value
     }));
-    
+
     if (errors[field]) {
       setErrors(prev => ({
         ...prev,
@@ -149,7 +150,7 @@ const AddPlantModal = ({ isOpen, onClose, onAddPlant }) => {
 
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-gray-800">Basic Information</h3>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -193,7 +194,7 @@ const AddPlantModal = ({ isOpen, onClose, onAddPlant }) => {
 
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-gray-800">Location & Container</h3>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -231,26 +232,9 @@ const AddPlantModal = ({ isOpen, onClose, onAddPlant }) => {
 
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-gray-800">Care Information</h3>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Light Requirement *
-                </label>
-                <select
-                  value={formData.lightRequirement}
-                  onChange={(e) => handleChange('lightRequirement', e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent ${
-                    errors.lightRequirement ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                >
-                  <option value="">Select light requirement</option>
-                  {LIGHT_OPTIONS.map(option => (
-                    <option key={option} value={option}>{option}</option>
-                  ))}
-                </select>
-                {errors.lightRequirement && <p className="text-red-500 text-sm mt-1">{errors.lightRequirement}</p>}
-              </div>
+              {/* Removed Light Requirement Input */}
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -282,16 +266,10 @@ const AddPlantModal = ({ isOpen, onClose, onAddPlant }) => {
                 />
               </div>
 
+              {/* Removed Next Watering Input */}
+              {/* This div is now empty or might need re-structuring if you only have one input left in this row */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Next Watering
-                </label>
-                <input
-                  type="date"
-                  value={formData.nextWatering}
-                  onChange={(e) => handleChange('nextWatering', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                />
+                {/* Keep this div if you plan to add another input here later, or remove if not needed */}
               </div>
             </div>
 
