@@ -56,15 +56,12 @@ const PlantDetail = ({ plant, onBack, onUpdate, onDelete }) => {
         <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-4 mb-6">
           {/* Plant Info - Left Side */}
           <div className="flex-1 min-w-0">
-            <h1 className="text-2xl sm:text-3xl font-bold mb-2 break-words leading-tight">
-              {plant.name}
-            </h1>
+            <h2 className="text-2xl sm:text-3xl font-bold mb-2 break-words leading-tight">
+              {plant.plantCode || plant.code} - {plant.name}
+            </h2>
             <div className="flex flex-wrap items-center gap-2">
               <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-white bg-opacity-20 text-white">
                 {plant.type || plant.category_name}
-              </span>
-              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-mono font-medium bg-white bg-opacity-15 text-white">
-                #{plant.plantCode || plant.code}
               </span>
             </div>
           </div>
