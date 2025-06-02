@@ -1,11 +1,43 @@
-import React from 'react';
-import { Calendar, ArrowLeft, Camera, AlertCircle } from 'lucide-react';
+import React, { useState } from 'react';
+import { Calendar, ArrowLeft, Camera, AlertCircle, Edit, Trash2 } from 'lucide-react';
 import ActionItem from './ActionItem';
 import { formatDate, daysBetween } from '../../utils/dateUtils';
 
-const PlantDetail = ({ plant, onBack }) => {
-  const daysSinceMediaChange = daysBetween(new Date(plant.lastMediaChange), new Date());
+const PlantDetail = ({ plant, onBack, onUpdate, onDelete }) => {
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  
+  const daysSinceMediaChange = daysBetween(new Date(plant.lastMediaChange || plant.last_media_changed), new Date());
   const daysUntilWatering = daysBetween(new Date(), new Date(plant.nextWatering));
+
+  const handleDelete = async () => {
+    if (onDelete) {
+      try {
+        setIsDeleting(true);
+        await onDelete(plant.id);
+        // Go back to list after successful deletion
+        onBack();
+      } catch (error) {
+        console.error('Error deleting plant:', error);
+        alert('Failed to delete plant. Please try again.');
+      } finally {
+        setIsDeleting(false);
+      }
+    } else {
+      console.log('Delete clicked for plant:', plant.name);
+      alert(`Delete functionality not implemented yet for ${plant.name}`);
+    }
+    setShowDeleteConfirm(false);
+  };
+
+  const handleUpdate = () => {
+    if (onUpdate) {
+      onUpdate(plant);
+    } else {
+      console.log('Update clicked for plant:', plant.name);
+      alert(`Update functionality not implemented yet for ${plant.name}`);
+    }
+  };
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -25,14 +57,59 @@ const PlantDetail = ({ plant, onBack }) => {
             <h1 className="text-3xl font-bold mb-2">{plant.name}</h1>
             <p className="text-green-100 text-lg">{plant.type}</p>
           </div>
-          <div className="text-right">
-            <div className="bg-white bg-opacity-20 px-4 py-2 rounded-full mb-2">
+          <div className="flex flex-col items-end gap-3">
+            <div className="bg-white bg-opacity-20 px-4 py-2 rounded-full">
               <span className="text-sm font-medium">Plant Code</span>
               <div className="font-mono text-lg font-bold">{plant.plantCode}</div>
+            </div>
+            
+            {/* Action Buttons */}
+            <div className="flex gap-2">
+              <button
+                onClick={handleUpdate}
+                className="flex items-center gap-2 px-4 py-2 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-lg transition-colors"
+              >
+                <Edit className="w-4 h-4" />
+                Update
+              </button>
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                disabled={isDeleting}
+                className="flex items-center gap-2 px-4 py-2 bg-red-500 bg-opacity-80 hover:bg-opacity-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Trash2 className="w-4 h-4" />
+                {isDeleting ? 'Deleting...' : 'Delete'}
+              </button>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md mx-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Delete Plant</h3>
+            <p className="text-gray-600 mb-4">
+              Are you sure you want to delete "{plant.name}"? This action cannot be undone.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Main Content */}
       <div className="bg-white rounded-b-xl shadow-lg border border-gray-200 border-t-0">

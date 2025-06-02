@@ -8,7 +8,7 @@ import AddPlantModal from './components/plants/AddPlantModal';
 import { usePlants } from './hooks/usePlants';
 
 const App = () => {
-  const { plants, loading, error, addPlant, refetch } = usePlants();
+  const { plants, loading, error, addPlant, updatePlant, deletePlant, refetch } = usePlants();
   const [selectedPlant, setSelectedPlant] = useState(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
@@ -23,6 +23,27 @@ const App = () => {
   const handleAddPlant = (newPlant) => {
     addPlant(newPlant);
     setIsAddModalOpen(false);
+  };
+
+  const handleUpdatePlant = (plant) => {
+    // For now, just show an alert - you can implement edit modal later
+    console.log('Update plant:', plant.name);
+    alert(`Update functionality for ${plant.name} will be implemented soon!`);
+    
+    // TODO: You can add edit modal logic here later:
+    // setEditingPlant(plant);
+    // setIsEditModalOpen(true);
+  };
+
+  const handleDeletePlant = async (plantId) => {
+    try {
+      await deletePlant(plantId);
+      // Go back to list after successful deletion
+      setSelectedPlant(null);
+    } catch (error) {
+      // Error handling is already done in the hook
+      console.error('Delete failed:', error);
+    }
   };
 
   const openAddModal = () => {
@@ -73,7 +94,12 @@ const App = () => {
       <Header plantCount={plants.length} />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {selectedPlant ? (
-          <PlantDetail plant={selectedPlant} onBack={handleBackToList} />
+          <PlantDetail 
+            plant={selectedPlant} 
+            onBack={handleBackToList}
+            onUpdate={handleUpdatePlant}
+            onDelete={handleDeletePlant}
+          />
         ) : (
           <PlantList plants={plants} onPlantClick={handlePlantClick} />
         )}
