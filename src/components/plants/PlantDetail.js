@@ -52,35 +52,56 @@ const PlantDetail = ({ plant, onBack, onUpdate, onDelete }) => {
 
       {/* Plant Header */}
       <div className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-t-xl p-6 text-white">
-        <div className="flex justify-between items-start mb-4">
-          <div>
-            <h1 className="text-3xl font-bold mb-2">{plant.name}</h1>
-            <p className="text-green-100 text-lg">{plant.type}</p>
-          </div>
-          <div className="flex flex-col items-end gap-3">
-            <div className="bg-white bg-opacity-20 px-4 py-2 rounded-full">
-              <span className="text-sm font-medium">Plant Code</span>
-              <div className="font-mono text-lg font-bold">{plant.plantCode}</div>
+        {/* Header Content */}
+        <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-4 mb-6">
+          {/* Plant Info - Left Side */}
+          <div className="flex-1 min-w-0">
+            <h1 className="text-2xl sm:text-3xl font-bold mb-2 break-words leading-tight">
+              {plant.name}
+            </h1>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-white bg-opacity-20 text-white">
+                {plant.type || plant.category_name}
+              </span>
+              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-mono font-medium bg-white bg-opacity-15 text-white">
+                #{plant.plantCode || plant.code}
+              </span>
             </div>
-            
-            {/* Action Buttons */}
+          </div>
+          
+          {/* Action Buttons - Right Side */}
+          <div className="flex-shrink-0">
             <div className="flex gap-2">
               <button
                 onClick={handleUpdate}
-                className="flex items-center gap-2 px-4 py-2 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-lg transition-colors"
+                className="flex items-center gap-2 px-4 py-2 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-lg transition-colors whitespace-nowrap"
               >
                 <Edit className="w-4 h-4" />
-                Update
+                <span className="hidden sm:inline">Update</span>
               </button>
               <button
                 onClick={() => setShowDeleteConfirm(true)}
                 disabled={isDeleting}
-                className="flex items-center gap-2 px-4 py-2 bg-red-500 bg-opacity-80 hover:bg-opacity-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center gap-2 px-4 py-2 bg-red-500 bg-opacity-80 hover:bg-opacity-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
               >
                 <Trash2 className="w-4 h-4" />
-                {isDeleting ? 'Deleting...' : 'Delete'}
+                <span className="hidden sm:inline">{isDeleting ? 'Deleting...' : 'Delete'}</span>
               </button>
             </div>
+          </div>
+        </div>
+        
+        {/* Location and Status Bar */}
+        <div className="flex flex-wrap items-center gap-4 text-sm">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 bg-white bg-opacity-60 rounded-full"></div>
+            <span className="text-green-100">Location:</span>
+            <span className="font-medium">{plant.location || 'Not specified'}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 bg-white bg-opacity-60 rounded-full"></div>
+            <span className="text-green-100">Last updated:</span>
+            <span className="font-medium">{formatDate(plant.lastMediaChange || plant.last_media_changed || new Date().toISOString().split('T')[0])}</span>
           </div>
         </div>
       </div>
