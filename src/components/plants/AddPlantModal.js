@@ -1,11 +1,21 @@
 // components/plants/AddPlantModal.js
 import React, { useState, useEffect } from 'react';
-import { Plus, X, RefreshCw } from 'lucide-react';
-import CameraCapture from '../camera/CameraCapture';
-import { generatePlantCode } from '../../utils/plantUtils';
-import { formatDateForInput } from '../../utils/dateUtils';
-import { DEFAULT_PLANT_IMAGE } from '../../utils/constants';
-import { useCategories } from '../../hooks/useCategories';
+import { Plus, X, RefreshCw, Upload } from 'lucide-react';
+// Assume these utilities and hooks exist in your project
+import CameraCapture from '../camera/CameraCapture'; // You need to provide this component
+import { generatePlantCode } from '../../utils/plantUtils'; // You need to provide this utility
+import { formatDateForInput } from '../../utils/dateUtils'; // You need to provide this utility
+import { useCategories } from '../../hooks/useCategories'; // You need to provide this hook
+import { API_BASE_URL } from '../../config'; // <--- ADD THIS IMPORT
+
+// Default plant image - consider adding a placeholder image URL here
+const DEFAULT_PLANT_IMAGE = '/path/to/default-plant-image.png';
+
+// Cloudinary Configuration Constants for Client-Side
+// These are used to form the payload for the /api/upload-image endpoint on your server
+const COMMUNITY_NAME = 'mekar';
+const COMMUNITY_MEMBER_ID = '00000001'; // IMPORTANT: In a real app, get this from user authentication
+const UPLOAD_FOLDER = 'APP_PLANT_PHOTO';
 
 const AddPlantModal = ({ isOpen, onClose, onAddPlant }) => {
   const { categories, loading: categoriesLoading } = useCategories();
@@ -13,22 +23,131 @@ const AddPlantModal = ({ isOpen, onClose, onAddPlant }) => {
   // Adjusted formData to match API's snake_case for consistency
   const [formData, setFormData] = useState({
     name: '',
-    category_id: '', // Storing category_id directly for API payload
-    photo_path: '', // Changed to photo_path to match API
+    category_id: '',
+    photo_path: '', // Will store Cloudinary URL after upload
     location: '',
-    pot_description: '', // Changed from potDescription to pot_description
-    last_media_changed: formatDateForInput(new Date()), // Changed from lastMediaChange
-    watering_frequency: '', // Changed from wateringFrequency
+    pot_description: '',
+    last_media_changed: formatDateForInput(new Date()),
+    watering_frequency: '',
     notes: ''
   });
 
   const [plantCode, setPlantCode] = useState('');
   const [errors, setErrors] = useState({});
+  const [isUploading, setIsUploading] = useState(false); // For image upload status
+  const [isAddingPlant, setIsAddingPlant] = useState(false); // For overall plant submission status
 
   useEffect(() => {
     if (isOpen) {
       setPlantCode(generatePlantCode());
-      // Reset form data when opening the modal, to ensure fresh start
+      // Reset form data when opening the modal for a fresh start
+      setFormData({
+        name: '',
+        category_id: '',
+        photo_path: '', // Reset photo path
+        location: '',
+        pot_description: '',
+        last_media_changed: formatDateForInput(new Date()),
+        watering_frequency: '',
+        notes: ''
+      });
+      setErrors({}); // Clear errors
+      setIsUploading(false);
+      setIsAddingPlant(false);
+    }
+  }, [isOpen]);
+
+  const regenerateCode = () => {
+    setPlantCode(generatePlantCode());
+  };
+
+  // Function to upload the photo to your Node.js server's /api/upload-image endpoint
+  const uploadPhotoToServer = async (file) => {
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+      formData.append('plantCode', plantCode);
+      formData.append('communityName', COMMUNITY_NAME);
+      formData.append('communityMemberId', COMMUNITY_MEMBER_ID); // Dynamic in real app
+      formData.append('uploadFolder', UPLOAD_FOLDER);
+
+      const response = await fetch(`${API_BASE_URL}/api/upload-image`, { // Ensure this path is correct for your proxy/setup
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Image upload failed on server.');
+      }
+
+      const result = await response.json();
+      return result.imageUrl; // This is the Cloudinary URL returned by your server
+    } catch (error) {
+      console.error('Error uploading image to server:', error);
+      throw error; // Re-throw to be caught by handleSubmit
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+    if (!formData.name.trim()) newErrors.name = 'Plant name is required.';
+    if (!formData.category_id) newErrors.category_id = 'Plant category is required.';
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!validateForm()) {
+      setErrors(prev => ({ ...prev, submit: 'Please fix the highlighted errors before submitting.' }));
+      return;
+    }
+
+    setIsAddingPlant(true); // Indicate that the overall plant submission process has started
+    setErrors({}); // Clear previous submission errors
+
+    try {
+      let finalPhotoPath = formData.photo_path || DEFAULT_PLANT_IMAGE;
+
+      // If a photo was captured (base64 string) or selected (processed to base64 for preview), upload it
+      if (formData.photo_path && formData.photo_path !== DEFAULT_PLANT_IMAGE) {
+        let fileToUpload;
+        if (formData.photo_path.startsWith('data:image/')) {
+          // Convert base64 to Blob, then to File for upload
+          const response = await fetch(formData.photo_path);
+          const blob = await response.blob();
+          fileToUpload = new File([blob], `${plantCode}_photo.jpeg`, { type: 'image/jpeg' });
+        } else {
+          // This case might occur if you are re-editing and the photo_path is already a Cloudinary URL.
+          // For adding, it should primarily be a base64 from capture/file input.
+          // If it's already a URL, no re-upload needed.
+          fileToUpload = null; // No new file to upload if it's already a URL
+        }
+
+        if (fileToUpload) {
+          finalPhotoPath = await uploadPhotoToServer(fileToUpload);
+        }
+      }
+
+      // Prepare the plant data to be sent to your /plants API
+      const plantDataToSend = {
+        ...formData,
+        code: plantCode, // Include the generated plant code
+        photo_path: finalPhotoPath, // Use the Cloudinary URL (or default)
+      };
+
+      console.log('Sending plant data to API:', plantDataToSend);
+
+      // Call the onAddPlant prop from the parent component, which will make the /plants API call
+      await onAddPlant(plantDataToSend);
+
+      // If successful, close the modal and reset form states
+      onClose();
       setFormData({
         name: '',
         category_id: '',
@@ -39,59 +158,25 @@ const AddPlantModal = ({ isOpen, onClose, onAddPlant }) => {
         watering_frequency: '',
         notes: ''
       });
-      setErrors({}); // Clear errors on modal open
+      setPlantCode('');
+      setErrors({});
+    } catch (error) {
+      console.error('Error during plant submission:', error);
+
+      let errorMessage = 'Failed to add plant. Please try again.';
+      // Enhance error message based on the type of error
+      if (error instanceof Error && error.message) {
+        errorMessage = `Submission error: ${error.message}`;
+      } else if (error.response) { // Assuming Axios or similar for error.response
+        errorMessage = `Server error: ${error.response.status} - ${error.response.data?.message || error.response.statusText}`;
+      } else if (error.request) { // Network error
+        errorMessage = 'Network error: Please check your connection and try again.';
+      }
+
+      setErrors({ submit: errorMessage });
+    } finally {
+      setIsAddingPlant(false); // End overall plant submission process
     }
-  }, [isOpen]);
-
-  const regenerateCode = () => {
-    setPlantCode(generatePlantCode());
-  };
-
-  const validateForm = () => {
-    const newErrors = {};
-
-    if (!formData.name.trim()) newErrors.name = 'Plant name is required';
-    // Validate category_id instead of type
-    if (!formData.category_id) newErrors.category_id = 'Plant category is required';
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-
-    if (!validateForm()) return;
-
-    // The API might expect 'code' to be sent, or it might generate it.
-    // Assuming you send it as 'code' if it's part of the creation payload.
-    // If the API generates `code` and `id`, remove `plantCode` from the payload.
-    const plantDataToSend = {
-      ...formData,
-      code: plantCode, // Send the generated code
-      photo_path: formData.photo_path || DEFAULT_PLANT_IMAGE, // Ensure photo_path is set or default
-      // No need for 'id' here, as the API will assign it
-    };
-
-    // Assuming onAddPlant is responsible for making the API call
-    // It should receive plantDataToSend
-    onAddPlant(plantDataToSend);
-
-    // Form reset handled by useEffect on subsequent opens, but good to have here too
-    // in case modal stays open or you want to clear immediately after successful add
-    setFormData({
-      name: '',
-      category_id: '',
-      photo_path: '',
-      location: '',
-      pot_description: '',
-      last_media_changed: formatDateForInput(new Date()),
-      watering_frequency: '',
-      notes: ''
-    });
-    setPlantCode('');
-    setErrors({});
-    onClose();
   };
 
   const handleChange = (field, value) => {
@@ -100,7 +185,7 @@ const AddPlantModal = ({ isOpen, onClose, onAddPlant }) => {
       [field]: value
     }));
 
-    if (errors[field]) {
+    if (errors[field]) { // Clear error for the field being changed
       setErrors(prev => ({
         ...prev,
         [field]: ''
@@ -108,10 +193,65 @@ const AddPlantModal = ({ isOpen, onClose, onAddPlant }) => {
     }
   };
 
-  // Special handleChange for category dropdown
   const handleCategoryChange = (e) => {
     const selectedCategoryId = e.target.value;
     handleChange('category_id', selectedCategoryId);
+  };
+
+  // Image compression function (client-side before upload)
+  const compressImage = (file, maxWidth = 800, quality = 0.8) => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.src = URL.createObjectURL(file);
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+
+        const ratio = Math.min(maxWidth / img.width, maxWidth / img.height);
+        canvas.width = img.width * ratio;
+        canvas.height = img.height * ratio;
+
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        canvas.toBlob(resolve, 'image/jpeg', quality);
+      };
+      img.onerror = (error) => {
+        console.error("Error loading image for compression:", error);
+        reject(new Error("Failed to load image for compression."));
+      };
+    });
+  };
+
+  // Handle file input for photo upload
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setErrors(prev => ({ ...prev, photo: 'Please select a valid image file.' }));
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) { // Check initial size before compression
+      setErrors(prev => ({ ...prev, photo: 'Image size should be less than 10MB.' }));
+      return;
+    }
+
+    try {
+      setIsUploading(true);
+      const compressedBlob = await compressImage(file);
+
+      // Convert compressed blob to base64 for local preview in the UI
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        handleChange('photo_path', reader.result); // Store base64 for preview
+        setIsUploading(false); // Stop indicating upload once local processing/preview is ready
+      };
+      reader.readAsDataURL(compressedBlob);
+
+    } catch (error) {
+      console.error('Error processing file for upload:', error);
+      setErrors(prev => ({ ...prev, photo: error.message || 'Error processing image for upload.' }));
+      setIsUploading(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -133,6 +273,12 @@ const AddPlantModal = ({ isOpen, onClose, onAddPlant }) => {
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          {errors.submit && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <p className="text-red-600 text-sm">{errors.submit}</p>
+            </div>
+          )}
+
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-gray-800">Plant Code</h3>
             <div className="bg-green-50 border border-green-200 rounded-lg p-4">
@@ -158,12 +304,39 @@ const AddPlantModal = ({ isOpen, onClose, onAddPlant }) => {
 
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-gray-800">Plant Photo</h3>
+            
+            {/* Camera Capture Component */}
             <CameraCapture
-              // Updated to photo_path
               onPhotoCapture={(photo) => handleChange('photo_path', photo)}
               capturedPhoto={formData.photo_path}
               onRemovePhoto={() => handleChange('photo_path', '')}
             />
+
+            {/* Alternative File Upload */}
+            <div className="text-center">
+              <p className="text-sm text-gray-500 mb-2">Or upload from device</p>
+              <label className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg cursor-pointer transition-colors">
+                <Upload className="w-4 h-4" />
+                Choose Image
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                />
+              </label>
+              {errors.photo && <p className="text-red-500 text-sm mt-1">{errors.photo}</p>}
+            </div>
+
+            {/* Upload/Processing Progress Indicator */}
+            {isUploading && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="flex items-center gap-2">
+                  <RefreshCw className="w-4 h-4 text-blue-500 animate-spin" />
+                  <span className="text-blue-600 text-sm">Processing image...</span>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="space-y-4">
@@ -191,19 +364,17 @@ const AddPlantModal = ({ isOpen, onClose, onAddPlant }) => {
                   Plant Category *
                 </label>
                 <select
-                  // Value now maps to category_id
                   value={formData.category_id}
-                  onChange={handleCategoryChange} // Use special handler for category
+                  onChange={handleCategoryChange}
                   disabled={categoriesLoading}
                   className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent ${
-                    errors.category_id ? 'border-red-500' : 'border-gray-300' // Changed error check
+                    errors.category_id ? 'border-red-500' : 'border-gray-300'
                   } ${categoriesLoading ? 'bg-gray-100' : ''}`}
                 >
                   <option value="">
                     {categoriesLoading ? 'Loading categories...' : 'Select plant category'}
                   </option>
                   {categories.map(category => (
-                    // Send category.id as value for the API
                     <option key={category.id} value={category.id}>{category.name}</option>
                   ))}
                 </select>
@@ -237,7 +408,6 @@ const AddPlantModal = ({ isOpen, onClose, onAddPlant }) => {
                 </label>
                 <input
                   type="text"
-                  // Updated to pot_description
                   value={formData.pot_description}
                   onChange={(e) => handleChange('pot_description', e.target.value)}
                   className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent ${
@@ -259,7 +429,6 @@ const AddPlantModal = ({ isOpen, onClose, onAddPlant }) => {
                 </label>
                 <input
                   type="text"
-                  // Updated to watering_frequency
                   value={formData.watering_frequency}
                   onChange={(e) => handleChange('watering_frequency', e.target.value)}
                   className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent ${
@@ -269,25 +438,15 @@ const AddPlantModal = ({ isOpen, onClose, onAddPlant }) => {
                 />
               </div>
               <div>
-                {/* This div is here to maintain grid layout consistency, or can be removed if layout changes */}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Last Media Change
                 </label>
                 <input
                   type="date"
-                  // Updated to last_media_changed
                   value={formData.last_media_changed}
                   onChange={(e) => handleChange('last_media_changed', e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 />
-              </div>
-              <div>
-                {/* This div is here to maintain grid layout consistency, or can be removed if layout changes */}
               </div>
             </div>
 
@@ -315,11 +474,20 @@ const AddPlantModal = ({ isOpen, onClose, onAddPlant }) => {
             </button>
             <button
               type="submit"
-              disabled={categoriesLoading}
+              disabled={categoriesLoading || isUploading || isAddingPlant}
               className="px-6 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Plus className="w-4 h-4" />
-              Add Plant
+              {isUploading || isAddingPlant ? (
+                <>
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  {isUploading ? 'Uploading Image...' : 'Adding Plant...'}
+                </>
+              ) : (
+                <>
+                  <Plus className="w-4 h-4" />
+                  Add Plant
+                </>
+              )}
             </button>
           </div>
         </form>
