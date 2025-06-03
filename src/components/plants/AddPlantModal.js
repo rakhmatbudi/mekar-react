@@ -15,7 +15,7 @@ const DEFAULT_PLANT_IMAGE = '/path/to/default-plant-image.png';
 // These are used to form the payload for the /api/upload-image endpoint on your server
 const COMMUNITY_NAME = 'Mekar';
 const COMMUNITY_MEMBER_ID = '00000001'; // IMPORTANT: In a real app, get this from user authentication
-const UPLOAD_FOLDER = 'APP_PLANT_PHOTO';
+const UPLOAD_FOLDER = 'Collection';
 
 const AddPlantModal = ({ isOpen, onClose, onAddPlant }) => {
   const { categories, loading: categoriesLoading } = useCategories();

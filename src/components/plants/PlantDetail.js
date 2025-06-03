@@ -170,11 +170,6 @@ const PlantDetail = ({ plant, onBack, onUpdate, onDelete }) => {
               </div>
               
               <div className="bg-gray-50 p-4 rounded-lg">
-                <div className="text-sm text-gray-600 mb-1">Light Requirement</div>
-                <div className="font-medium">{plant.lightRequirement}</div>
-              </div>
-              
-              <div className="bg-gray-50 p-4 rounded-lg">
                 <div className="text-sm text-gray-600 mb-1">Watering Frequency</div>
                 <div className="font-medium">{plant.wateringFrequency}</div>
               </div>
@@ -199,16 +194,6 @@ const PlantDetail = ({ plant, onBack, onUpdate, onDelete }) => {
               <div className="text-sm text-blue-600 mb-1">Last Media Change</div>
               <div className="font-semibold text-blue-800">{formatDate(plant.lastMediaChange)}</div>
               <div className="text-sm text-blue-600 mt-1">{daysSinceMediaChange} days ago</div>
-            </div>
-            
-            <div className="bg-green-50 border border-green-200 p-4 rounded-lg">
-              <div className="text-sm text-green-600 mb-1">Next Watering</div>
-              <div className="font-semibold text-green-800">{formatDate(plant.nextWatering)}</div>
-              <div className="text-sm text-green-600 mt-1">
-                {daysUntilWatering > 0 ? `In ${daysUntilWatering} days` : 
-                 daysUntilWatering === 0 ? 'Today' : 
-                 `${Math.abs(daysUntilWatering)} days overdue`}
-              </div>
             </div>
           </div>
         </div>
